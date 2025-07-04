@@ -1,13 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ApplicationList } from './components/ApplicationList';
 import { ApplicationForm } from './components/ApplicationForm';
 import { Header } from './components/Header';
-import * as XLSX from 'xlsx'; // Import the xlsx library
-// import './App.css'; // Removed as styling is primarily handled by Tailwind CSS and this file was not provided
+import { Dashboard } from './components/Dashboard';
+import * as XLSX from 'xlsx'; // Keep XLSX import for now, but it will move to Dashboard
+
+// Helper function to get a date string in YYYY-MM-DD format
+const getFormattedDate = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 function App() {
   const [applications, setApplications] = useState([]);
-  const [editingApplication, setEditingApplication] = useState(null); // State for application being edited
+  const [editingApplication, setEditingApplication] = useState(null);
+  const [statusCounts, setStatusCounts] = useState({});
+  // dateFilter state removed from App.js
 
   // Base URL for your Spring Boot backend
   const API_BASE_URL = 'http://localhost:8080/api/applications';
@@ -21,9 +31,29 @@ function App() {
       }
       const data = await response.json();
       setApplications(data);
+      calculateStatusCounts(data); // Calculate counts for the dashboard
     } catch (error) {
       console.error("Error fetching applications:", error);
     }
+  };
+
+  // Function to calculate status counts (for the Dashboard)
+  const calculateStatusCounts = (apps) => {
+    const counts = {};
+    const allStatuses = ['Applied', 'Interviewing', 'Offer', 'Rejected', 'Wishlist'];
+
+    allStatuses.forEach(status => {
+      counts[status] = 0;
+    });
+
+    apps.forEach(app => {
+      if (app.status && counts.hasOwnProperty(app.status)) {
+        counts[app.status]++;
+      } else if (app.status) {
+        counts[app.status] = (counts[app.status] || 0) + 1;
+      }
+    });
+    setStatusCounts(counts);
   };
 
   // Fetch applications on component mount
@@ -31,24 +61,16 @@ function App() {
     fetchApplications();
   }, []);
 
-  // Function to add a new application - updated to accept two arguments
-  const addApplication = async (_id, application) => { // _id will be null for new applications
+  const addApplication = async (_id, application) => {
     try {
-      // Log the application object *immediately before* stringifying it
-      console.log("Application object received in addApplication:", application);
-
-      const requestBody = JSON.stringify(application); // Stringify the application object
-      console.log("Stringified request body:", requestBody); // Log the result of stringify
-
+      const requestBody = JSON.stringify(application);
       const fetchOptions = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: requestBody, // Use the stringified body
+        body: requestBody,
       };
-      console.log("Preparing fetch POST request with options:", fetchOptions);
-
       const response = await fetch(API_BASE_URL, fetchOptions);
       if (!response.ok) {
         let errorMessage = `HTTP error! status: ${response.status}`;
@@ -68,24 +90,16 @@ function App() {
     }
   };
 
-  // Function to update an existing application
   const updateApplication = async (id, application) => {
     try {
-      // Log the application object *immediately before* stringifying it
-      console.log("Application object received in updateApplication:", application);
-
-      const requestBody = JSON.stringify(application); // Stringify the application object
-      console.log("Stringified request body:", requestBody); // Log the result of stringify
-
+      const requestBody = JSON.stringify(application);
       const fetchOptions = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: requestBody, // Use the stringified body
+        body: requestBody,
       };
-      console.log("Preparing fetch PUT request with options:", fetchOptions);
-
       const response = await fetch(`${API_BASE_URL}/${id}`, fetchOptions);
       if (!response.ok) {
         let errorMessage = `HTTP error! status: ${response.status}`;
@@ -106,7 +120,6 @@ function App() {
     }
   };
 
-  // Function to delete an application
   const deleteApplication = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/${id}`, {
@@ -123,74 +136,56 @@ function App() {
         }
         throw new Error(errorMessage);
       }
-      setApplications(applications.filter(app => app.id !== id));
+      const updatedApplications = applications.filter(app => app.id !== id);
+      setApplications(updatedApplications);
+      calculateStatusCounts(updatedApplications);
     } catch (error) {
       console.error("Error deleting application:", error);
       alert(`Failed to delete application: ${error.message}`);
     }
   };
 
-  // Function to set an application for editing
   const handleEdit = (application) => {
     setEditingApplication(application);
   };
 
-  // Function to cancel editing
   const handleCancelEdit = () => {
     setEditingApplication(null);
   };
 
-  // Function to export applications to Excel
-  const exportToExcel = () => {
-    if (applications.length === 0) {
-      alert("No applications to export.");
-      return;
-    }
-
-    // Map the application data to a format suitable for Excel
-    const dataToExport = applications.map(app => ({
-      ID: app.id,
-      Company: app.company,
-      Position: app.position,
-      Status: app.status,
-      'Date Applied': app.dateApplied, // Handle spaces in header names
-      Notes: app.notes
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Job Applications");
-
-    // Generate and download the Excel file
-    XLSX.writeFile(workbook, "JobApplications.xlsx");
-  };
-
+  // exportToExcel function removed from App.js
 
   return (
       <div className="min-h-screen bg-gray-100 font-sans antialiased">
         <Header />
         <main className="container mx-auto p-4 md:p-8">
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              {editingApplication ? 'Edit Application' : 'Add New Application'}
-            </h2>
-            <ApplicationForm
-                onSubmit={editingApplication ? updateApplication : addApplication}
-                initialData={editingApplication}
-                onCancel={handleCancelEdit}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {/* Dashboard Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">Application Status Dashboard</h2>
+              {/* Pass all applications to Dashboard for filtering and export */}
+              <Dashboard allApplications={applications} statusCounts={statusCounts} />
+            </div>
+
+            {/* Add/Edit Form Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                {editingApplication ? 'Edit Application' : 'Add New Application'}
+              </h2>
+              <ApplicationForm
+                  onSubmit={editingApplication ? updateApplication : addApplication}
+                  initialData={editingApplication}
+                  onCancel={handleCancelEdit}
+              />
+            </div>
           </div>
 
+          {/* Application List Section */}
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Applications</h2>
-            <button
-                onClick={exportToExcel}
-                className="mb-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 ease-in-out transform hover:scale-105"
-            >
-              Export to Excel
-            </button>
+            {/* Filter buttons and Export to Excel button removed from here */}
             <ApplicationList
-                applications={applications}
+                applications={applications} // ApplicationList now always displays all applications
                 onEdit={handleEdit}
                 onDelete={deleteApplication}
             />

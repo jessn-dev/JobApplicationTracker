@@ -15,7 +15,7 @@ import lombok.AllArgsConstructor;
 @Entity
 @Data // Generates getters, setters, toString, equals, hashCode
 @NoArgsConstructor // Generates a no-argument constructor
-@AllArgsConstructor // Generates a constructor with all fields
+//@AllArgsConstructor // Generates a constructor with all fields
 public class JobApplication {
 
     @Id
