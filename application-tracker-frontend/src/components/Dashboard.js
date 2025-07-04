@@ -112,49 +112,20 @@ export function Dashboard({ allApplications, statusCounts }) {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* Filter Buttons for Dashboard */}
+            {/* Filter Dropdown for Dashboard */}
             <div className="flex flex-wrap gap-2 items-center">
-                <span className="text-sm font-medium text-gray-700 mr-2">Filter by Date Applied:</span>
-                <button
-                    onClick={() => setDateFilter('all')}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
-                        dateFilter === 'all'
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
+                <label htmlFor="dateFilter" className="text-sm font-medium text-gray-700 mr-2">Filter by Date Applied:</label>
+                <select
+                    id="dateFilter"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
+                    className="px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
                 >
-                    All
-                </button>
-                <button
-                    onClick={() => setDateFilter('today')}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
-                        dateFilter === 'today'
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    Today
-                </button>
-                <button
-                    onClick={() => setDateFilter('yesterday')}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
-                        dateFilter === 'yesterday'
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    Yesterday
-                </button>
-                <button
-                    onClick={() => setDateFilter('last7days')}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
-                        dateFilter === 'last7days'
-                            ? 'bg-blue-600 text-white shadow'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                >
-                    Past 7 Days
-                </button>
+                    <option value="all">All</option>
+                    <option value="today">Today</option>
+                    <option value="yesterday">Yesterday</option>
+                    <option value="last7days">Past 7 Days</option>
+                </select>
             </div>
 
             {filteredApplicationsForDashboard.length === 0 ? (
@@ -220,7 +191,7 @@ export function Dashboard({ allApplications, statusCounts }) {
                 </div>
             )}
             {/* Export to Excel Button for Dashboard with Tooltip */}
-            <div className="relative group self-center md:self-start"> {/* Added group and relative for tooltip */}
+            <div className="relative group self-center md:self-start">
                 <button
                     onClick={exportToExcel}
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 ease-in-out transform hover:scale-105"
