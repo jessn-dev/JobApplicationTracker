@@ -5,6 +5,7 @@ import com.jgnproj.applicationtracker.repository.JobApplicationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,6 +27,7 @@ public class JobApplicationService {
 
     // Create a new job application
     public JobApplication createApplication(JobApplication application) {
+        application.setLastUpdated(LocalDateTime.now()); // Set lastUpdated on creation
         return jobApplicationRepository.save(application);
     }
 
@@ -36,11 +38,12 @@ public class JobApplicationService {
                 .orElseThrow(() -> new RuntimeException("Job Application not found with id: " + id));
 
         // Update fields
-        application.setCompanyName(applicationDetails.getCompanyName());
+        application.setCompany(applicationDetails.getCompany());
         application.setPosition(applicationDetails.getPosition());
         application.setStatus(applicationDetails.getStatus());
         application.setDateApplied(applicationDetails.getDateApplied());
         application.setNotes(applicationDetails.getNotes());
+        application.setLastUpdated(LocalDateTime.now()); // Update lastUpdated on modification
 
         return jobApplicationRepository.save(application);
     }

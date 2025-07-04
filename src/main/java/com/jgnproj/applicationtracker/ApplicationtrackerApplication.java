@@ -19,12 +19,11 @@ public class ApplicationtrackerApplication {
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				registry.addMapping("/api/**") // Apply CORS to all /api endpoints
-						.allowedOrigins("http://localhost:3000") // Allow requests from React dev server
-						.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-						.allowedHeaders("*")
-						.allowCredentials(true);
+						.allowedOrigins("http://localhost:3000") // EXACT URL of your React dev server
+						.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Explicitly allow OPTIONS
+						.allowedHeaders("*") // Allow all headers (including Content-Type)
+						.allowCredentials(true); // If you plan to use cookies/sessions
 			}
 		};
 	}
-
 }
