@@ -8,6 +8,8 @@ class ApplicationtrackerApplicationTests {
 
 	@Test
 	void contextLoads() {
+		// This test simply checks if the Spring application context loads successfully.
+		// It's a basic sanity check.
 	}
 
 }
