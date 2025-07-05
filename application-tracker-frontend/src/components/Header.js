@@ -1,6 +1,11 @@
 import React from 'react';
 
-export function Header({ currentPage, onNavigate, onLoginClick, onSignupClick, onLogout, isLoggedIn }) {
+export function Header({ currentPage, onNavigate, onSignInClick, onLogout, isLoggedIn, setShowAuthPage }) {
+    const handleHomeClick = () => {
+        onNavigate('home');
+        setShowAuthPage(false); // Ensure auth page is closed when navigating to home
+    };
+
     return (
         <header className="fixed w-full z-30 top-0 bg-transparent text-white">
             <div className="container mx-auto flex items-center justify-between py-4 px-6">
@@ -13,7 +18,7 @@ export function Header({ currentPage, onNavigate, onLoginClick, onSignupClick, o
                         <ul className="flex space-x-4">
                             <li>
                                 <button
-                                    onClick={() => onNavigate('home')}
+                                    onClick={handleHomeClick} // Use the new handler
                                     className={`px-3 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
                                         currentPage === 'home' ? 'bg-blue-700' : 'hover:bg-blue-500'
                                     }`}
@@ -35,23 +40,15 @@ export function Header({ currentPage, onNavigate, onLoginClick, onSignupClick, o
                     </nav>
                 </div>
 
-                {/* Right section: Login/Signup/Logout Buttons */}
+                {/* Right section: Sign In/Logout Buttons */}
                 <div className="flex items-center space-x-4">
                     {!isLoggedIn ? (
-                        <>
-                            <button
-                                onClick={onLoginClick}
-                                className="px-4 py-2 border border-white rounded-md text-sm font-medium text-white hover:bg-white hover:text-blue-600 transition duration-300 ease-in-out"
-                            >
-                                Login
-                            </button>
-                            <button
-                                onClick={onSignupClick}
-                                className="px-4 py-2 bg-white text-blue-600 rounded-md text-sm font-medium hover:bg-blue-100 transition duration-300 ease-in-out shadow-md"
-                            >
-                                Sign Up
-                            </button>
-                        </>
+                        <button
+                            onClick={onSignInClick} // Changed to onSignInClick
+                            className="px-4 py-2 border border-white rounded-md text-sm font-medium text-white hover:bg-white hover:text-blue-600 transition duration-300 ease-in-out"
+                        >
+                            Sign In
+                        </button>
                     ) : (
                         <button
                             onClick={onLogout}

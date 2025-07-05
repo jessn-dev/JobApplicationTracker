@@ -7,16 +7,17 @@ export function AuthPage({ mode, onAuthSuccess, onClose, onSwitchMode }) {
     const [confirmPassword, setConfirmPassword] = useState('');
 
     const isLoginMode = mode === 'login';
-    const title = isLoginMode ? 'Login to Your Account' : 'Create Your Account';
-    const submitButtonText = isLoginMode ? 'Login' : 'Sign Up';
-    const switchModeText = isLoginMode ? "Don't have an account?" : "Already have an account?";
-    const switchModeButtonText = isLoginMode ? 'Sign Up' : 'Login';
+    const title = isLoginMode ? 'Sign In to Your Account' : 'Create Your Account';
+    const submitButtonText = isLoginMode ? 'Sign In' : 'Sign Up';
+    const socialAuthText = isLoginMode ? 'Sign in with' : 'Sign up with';
+    const emailAuthText = isLoginMode ? 'Or sign in with email' : 'Or sign up with email';
+
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (isLoginMode) {
             if (email && password) {
-                alert(`Logging in with Email: ${email}`);
+                alert(`Signing in with Email: ${email}`);
                 onAuthSuccess();
             } else {
                 alert('Please enter email and password.');
@@ -34,7 +35,7 @@ export function AuthPage({ mode, onAuthSuccess, onClose, onSwitchMode }) {
     };
 
     const handleSocialAuth = (provider) => {
-        alert(`${isLoginMode ? 'Logging in' : 'Signing up'} with ${provider}... (Integration coming soon!)`);
+        alert(`${isLoginMode ? 'Signing in' : 'Signing up'} with ${provider}... (Integration coming soon!)`);
         // Simulate success after a short delay
         setTimeout(() => {
             onAuthSuccess();
@@ -55,60 +56,8 @@ export function AuthPage({ mode, onAuthSuccess, onClose, onSwitchMode }) {
 
             <h2 className="relative z-10 text-3xl font-extrabold text-gray-900 mb-6">{title}</h2>
 
-            <form onSubmit={handleSubmit} className="relative z-10 w-full max-w-md bg-white p-8 rounded-lg shadow-md space-y-4">
-                <div>
-                    <label htmlFor="email" className="sr-only">Email</label>
-                    <input
-                        type="email"
-                        id="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email Address"
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="password" className="sr-only">Password</label>
-                    <input
-                        type="password"
-                        id="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    />
-                </div>
-                {!isLoginMode && (
-                    <div>
-                        <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
-                        <input
-                            type="password"
-                            id="confirmPassword"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            placeholder="Confirm Password"
-                            required
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        />
-                    </div>
-                )}
-                <button
-                    type="submit"
-                    className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
-                >
-                    {submitButtonText}
-                </button>
-            </form>
-
-            <div className="relative z-10 w-full max-w-md mt-6 text-gray-700">
-                <div className="relative flex py-5 items-center">
-                    <div className="flex-grow border-t border-gray-400"></div>
-                    <span className="flex-shrink mx-4 text-gray-600">Or {isLoginMode ? 'login' : 'sign up'} with</span>
-                    <div className="flex-grow border-t border-gray-400"></div>
-                </div>
-
+            <div className="relative z-10 w-full max-w-md bg-white p-8 rounded-lg shadow-md space-y-4">
+                {/* Social Login Buttons */}
                 <div className="flex justify-center space-x-4 mb-6">
                     <button
                         onClick={() => handleSocialAuth('Google')}
@@ -133,15 +82,83 @@ export function AuthPage({ mode, onAuthSuccess, onClose, onSwitchMode }) {
                     </button>
                 </div>
 
-                <p className="text-sm">
-                    {switchModeText}{' '}
+                <div className="relative flex py-5 items-center">
+                    <div className="flex-grow border-t border-gray-400"></div>
+                    <span className="flex-shrink mx-4 text-gray-600">{emailAuthText}</span>
+                    <div className="flex-grow border-t border-gray-400"></div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label htmlFor="email" className="sr-only">Email</label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="Email Address"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="password" className="sr-only">Password</label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            required
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        />
+                    </div>
+                    {!isLoginMode && (
+                        <div>
+                            <label htmlFor="confirmPassword" className="sr-only">Confirm Password</label>
+                            <input
+                                type="password"
+                                id="confirmPassword"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                placeholder="Confirm Password"
+                                required
+                                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                        </div>
+                    )}
                     <button
-                        onClick={() => onSwitchMode(isLoginMode ? 'signup' : 'login')}
-                        className="text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 ease-in-out"
+                        type="submit"
+                        className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
                     >
-                        {switchModeButtonText}
+                        {submitButtonText}
                     </button>
-                </p>
+                </form>
+
+                {/* Switch mode button */}
+                <div className="mt-6 text-sm">
+                    {isLoginMode ? (
+                        <p>
+                            Don't have an account?{' '}
+                            <button
+                                onClick={() => onSwitchMode('signup')}
+                                className="text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 ease-in-out"
+                            >
+                                Create an Account
+                            </button>
+                        </p>
+                    ) : (
+                        <p>
+                            Already have an account?{' '}
+                            <button
+                                onClick={() => onSwitchMode('login')}
+                                className="text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 ease-in-out"
+                            >
+                                Sign In
+                            </button>
+                        </p>
+                    )}
+                </div>
             </div>
         </div>
     );

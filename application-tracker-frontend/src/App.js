@@ -184,10 +184,10 @@ function App() {
         <Header
             currentPage={currentPage}
             onNavigate={setCurrentPage}
-            onLoginClick={() => { setShowAuthPage(true); setAuthMode('login'); }}
-            onSignupClick={() => { setShowAuthPage(true); setAuthMode('signup'); }}
+            onSignInClick={() => { setShowAuthPage(true); setAuthMode('login'); }} // Changed to onSignInClick
             onLogout={handleLogout}
             isLoggedIn={isLoggedIn}
+            setShowAuthPage={setShowAuthPage} // Pass setShowAuthPage to Header
         />
         <main className={mainContentClass}>
           {showAuthPage && (
@@ -245,7 +245,7 @@ function App() {
                     onClick={() => { setShowAuthPage(true); setAuthMode('login'); }}
                     className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
                 >
-                  Log In
+                  Sign In
                 </button>
               </div>
           )}
