@@ -7,30 +7,30 @@ import jakarta.persistence.Id;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// Lombok annotations for boilerplate code (add Lombok dependency)
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+//import lombok.AllArgsConstructor;
 
 @Entity
-@Data // Generates getters, setters, toString, equals, hashCode
-@NoArgsConstructor // Generates a no-argument constructor
-//@AllArgsConstructor // Generates a constructor with all fields
+@Data
+@NoArgsConstructor
+//@AllArgsConstructor
 public class JobApplication {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    private Long userId; // New field to link to a user
     private String company;
     private String position;
-    private String status; // e.g., Applied, Interviewing, Offer, Rejected
+    private String status;
     private LocalDate dateApplied;
     private String notes;
     private LocalDateTime lastUpdated;
 
     // Custom constructor for easier creation without ID (for new applications)
-    // Updated to include lastUpdated, though service will set it
-    public JobApplication(String company, String position, String status, LocalDate dateApplied, String notes) {
+    public JobApplication(Long userId, String company, String position, String status, LocalDate dateApplied, String notes) {
+        this.userId = userId;
         this.company = company;
         this.position = position;
         this.status = status;
@@ -40,8 +40,9 @@ public class JobApplication {
     }
 
     // Constructor including ID and lastUpdated for full object creation
-    public JobApplication(Long id, String company, String position, String status, LocalDate dateApplied, String notes, LocalDateTime lastUpdated) {
+    public JobApplication(Long id, Long userId, String company, String position, String status, LocalDate dateApplied, String notes, LocalDateTime lastUpdated) {
         this.id = id;
+        this.userId = userId;
         this.company = company;
         this.position = position;
         this.status = status;
@@ -50,5 +51,3 @@ public class JobApplication {
         this.lastUpdated = lastUpdated;
     }
 }
-
-

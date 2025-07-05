@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth") // Base path for authentication related endpoints
+@RequestMapping("/api/auth")
 public class UserController {
 
     @Autowired
@@ -30,10 +30,14 @@ public class UserController {
 
         try {
             User newUser = userService.registerNewUser(email, password);
-            // In a real application, you might return a JWT token or a simplified user object
-            return new ResponseEntity<>("User registered successfully: " + newUser.getEmail(), HttpStatus.CREATED);
+            // Return user ID upon successful registration for frontend to store
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("message", "User registered successfully");
+            response.put("userId", newUser.getId());
+            response.put("email", newUser.getEmail());
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT); // 409 Conflict for existing user
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
         }
     }
 
@@ -48,8 +52,12 @@ public class UserController {
 
         return userService.findByEmail(email).map(user -> {
             if (userService.checkPassword(password, user.getPasswordHash())) {
-                // In a real application, generate and return a JWT token here
-                return new ResponseEntity<>("User signed in successfully: " + user.getEmail(), HttpStatus.OK);
+                // Return user ID upon successful sign-in for frontend to store
+                Map<String, Object> response = new java.util.HashMap<>();
+                response.put("message", "User signed in successfully");
+                response.put("userId", user.getId());
+                response.put("email", user.getEmail());
+                return new ResponseEntity<>(response, HttpStatus.OK);
             } else {
                 return new ResponseEntity<>("Invalid credentials", HttpStatus.UNAUTHORIZED);
             }
