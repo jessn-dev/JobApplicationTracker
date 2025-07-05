@@ -27,17 +27,13 @@ export function ApplicationForm({ onSubmit, initialData, onCancel }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Basic client-side validation (though 'required' attribute should handle this)
         if (!company || !position || !dateApplied) {
-            // Using alert for quick debugging, consider a custom modal for production
             alert('Company, Position, and Date Applied are required fields.');
             return;
         }
 
         const application = { company, position, status, dateApplied, notes };
-        console.log("Sending application data from form:", application); // Log the application object from the form
         onSubmit(initialData ? initialData.id : null, application);
-        // Clear form after submission if it's a new application
         if (!initialData) {
             setCompany('');
             setPosition('');

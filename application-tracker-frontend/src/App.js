@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { ApplicationList } from './components/ApplicationList';
 import { ApplicationForm } from './components/ApplicationForm';
 import { Header } from './components/Header';
-import * as XLSX from 'xlsx'; // Import the xlsx library
-// import './App.css'; // Removed as styling is primarily handled by Tailwind CSS and this file was not provided
+import { Dashboard } from './components/Dashboard';
+import { HomePage } from './components/HomePage';
+import { AuthPage } from './components/AuthPage'; // Import the new combined AuthPage
+import * as XLSX from 'xlsx';
+
+// Helper function to get a date string in YYYY-MM-DD format
+const getFormattedDate = (date) => {
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 function App() {
   const [applications, setApplications] = useState([]);
-  const [editingApplication, setEditingApplication] = useState(null); // State for application being edited
+  const [editingApplication, setEditingApplication] = useState(null);
+  const [statusCounts, setStatusCounts] = useState({});
+  const [currentPage, setCurrentPage] = useState('home');
+  const [showAuthPage, setShowAuthPage] = useState(false); // State to control AuthPage visibility
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // State to track authentication status
 
   // Base URL for your Spring Boot backend
   const API_BASE_URL = 'http://localhost:8080/api/applications';
@@ -21,34 +36,48 @@ function App() {
       }
       const data = await response.json();
       setApplications(data);
+      calculateStatusCounts(data); // Calculate counts for the dashboard
     } catch (error) {
       console.error("Error fetching applications:", error);
     }
   };
 
-  // Fetch applications on component mount
+  // Function to calculate status counts (for the Dashboard)
+  const calculateStatusCounts = (apps) => {
+    const counts = {};
+    const allStatuses = ['Applied', 'Interviewing', 'Offer', 'Rejected', 'Wishlist'];
+
+    allStatuses.forEach(status => {
+      counts[status] = 0;
+    });
+
+    apps.forEach(app => {
+      if (app.status && counts.hasOwnProperty(app.status)) {
+        counts[app.status]++;
+      } else if (app.status) {
+        counts[app.status] = (counts[app.status] || 0) + 1;
+      }
+    });
+    setStatusCounts(counts);
+  };
+
+  // Fetch applications on component mount (only if on tracker page and logged in)
   useEffect(() => {
-    fetchApplications();
-  }, []);
+    if (currentPage === 'tracker' && isLoggedIn) {
+      fetchApplications();
+    }
+  }, [currentPage, isLoggedIn]); // Re-fetch when page changes to tracker or login status changes
 
-  // Function to add a new application - updated to accept two arguments
-  const addApplication = async (_id, application) => { // _id will be null for new applications
+  const addApplication = async (_id, application) => {
     try {
-      // Log the application object *immediately before* stringifying it
-      console.log("Application object received in addApplication:", application);
-
-      const requestBody = JSON.stringify(application); // Stringify the application object
-      console.log("Stringified request body:", requestBody); // Log the result of stringify
-
+      const requestBody = JSON.stringify(application);
       const fetchOptions = {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: requestBody, // Use the stringified body
+        body: requestBody,
       };
-      console.log("Preparing fetch POST request with options:", fetchOptions);
-
       const response = await fetch(API_BASE_URL, fetchOptions);
       if (!response.ok) {
         let errorMessage = `HTTP error! status: ${response.status}`;
@@ -68,24 +97,16 @@ function App() {
     }
   };
 
-  // Function to update an existing application
   const updateApplication = async (id, application) => {
     try {
-      // Log the application object *immediately before* stringifying it
-      console.log("Application object received in updateApplication:", application);
-
-      const requestBody = JSON.stringify(application); // Stringify the application object
-      console.log("Stringified request body:", requestBody); // Log the result of stringify
-
+      const requestBody = JSON.stringify(application);
       const fetchOptions = {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: requestBody, // Use the stringified body
+        body: requestBody,
       };
-      console.log("Preparing fetch PUT request with options:", fetchOptions);
-
       const response = await fetch(`${API_BASE_URL}/${id}`, fetchOptions);
       if (!response.ok) {
         let errorMessage = `HTTP error! status: ${response.status}`;
@@ -106,7 +127,6 @@ function App() {
     }
   };
 
-  // Function to delete an application
   const deleteApplication = async (id) => {
     try {
       const response = await fetch(`${API_BASE_URL}/${id}`, {
@@ -123,78 +143,112 @@ function App() {
         }
         throw new Error(errorMessage);
       }
-      setApplications(applications.filter(app => app.id !== id));
+      const updatedApplications = applications.filter(app => app.id !== id);
+      setApplications(updatedApplications);
+      calculateStatusCounts(updatedApplications);
     } catch (error) {
       console.error("Error deleting application:", error);
       alert(`Failed to delete application: ${error.message}`);
     }
   };
 
-  // Function to set an application for editing
   const handleEdit = (application) => {
     setEditingApplication(application);
   };
 
-  // Function to cancel editing
   const handleCancelEdit = () => {
     setEditingApplication(null);
   };
 
-  // Function to export applications to Excel
-  const exportToExcel = () => {
-    if (applications.length === 0) {
-      alert("No applications to export.");
-      return;
-    }
-
-    // Map the application data to a format suitable for Excel
-    const dataToExport = applications.map(app => ({
-      ID: app.id,
-      Company: app.company,
-      Position: app.position,
-      Status: app.status,
-      'Date Applied': app.dateApplied, // Handle spaces in header names
-      Notes: app.notes
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Job Applications");
-
-    // Generate and download the Excel file
-    XLSX.writeFile(workbook, "JobApplications.xlsx");
+  // Handle successful login/signup
+  const handleAuthSuccess = () => {
+    setIsLoggedIn(true);
+    setShowAuthPage(false); // Hide auth page
+    setCurrentPage('tracker'); // Navigate to tracker page after login/signup
   };
 
+  // Handle logout
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentPage('home'); // Go to home page after logout
+    alert('Logged out successfully!');
+  };
+
+  // Determine main content class based on the current page
+  const mainContentClass = currentPage === 'home' || showAuthPage
+      ? 'w-full p-0' // Full width and no padding for homepage or auth pages
+      : 'container mx-auto p-4 md:p-8'; // Centered container with padding for tracker page
 
   return (
       <div className="min-h-screen bg-gray-100 font-sans antialiased">
-        <Header />
-        <main className="container mx-auto p-4 md:p-8">
-          <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              {editingApplication ? 'Edit Application' : 'Add New Application'}
-            </h2>
-            <ApplicationForm
-                onSubmit={editingApplication ? updateApplication : addApplication}
-                initialData={editingApplication}
-                onCancel={handleCancelEdit}
-            />
-          </div>
+        <Header
+            currentPage={currentPage}
+            onNavigate={setCurrentPage}
+            onSignInClick={() => { setShowAuthPage(true); setAuthMode('login'); }} // Changed to onSignInClick
+            onLogout={handleLogout}
+            isLoggedIn={isLoggedIn}
+            setShowAuthPage={setShowAuthPage} // Pass setShowAuthPage to Header
+        />
+        <main className={mainContentClass}>
+          {showAuthPage && (
+              <AuthPage
+                  mode={authMode}
+                  onAuthSuccess={handleAuthSuccess}
+                  onClose={() => setShowAuthPage(false)}
+                  onSwitchMode={(mode) => setAuthMode(mode)}
+              />
+          )}
 
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Applications</h2>
-            <button
-                onClick={exportToExcel}
-                className="mb-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 ease-in-out transform hover:scale-105"
-            >
-              Export to Excel
-            </button>
-            <ApplicationList
-                applications={applications}
-                onEdit={handleEdit}
-                onDelete={deleteApplication}
-            />
-          </div>
+          {!showAuthPage && currentPage === 'home' && (
+              <HomePage onNavigate={setCurrentPage} />
+          )}
+
+          {!showAuthPage && currentPage === 'tracker' && isLoggedIn && ( // Only show tracker if logged in
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                  {/* Dashboard Section */}
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Application Status Dashboard</h2>
+                    <Dashboard allApplications={applications} statusCounts={statusCounts} />
+                  </div>
+
+                  {/* Add/Edit Form Section */}
+                  <div className="bg-white p-6 rounded-lg shadow-md">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                      {editingApplication ? 'Edit Application' : 'Add New Application'}
+                    </h2>
+                    <ApplicationForm
+                        onSubmit={editingApplication ? updateApplication : addApplication}
+                        initialData={editingApplication}
+                        onCancel={handleCancelEdit}
+                    />
+                  </div>
+                </div>
+
+                {/* Application List Section */}
+                <div className="bg-white p-6 rounded-lg shadow-md">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Applications</h2>
+                  <ApplicationList
+                      applications={applications}
+                      onEdit={handleEdit}
+                      onDelete={deleteApplication}
+                  />
+                </div>
+              </>
+          )}
+
+          {!showAuthPage && currentPage === 'tracker' && !isLoggedIn && (
+              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] bg-white rounded-lg shadow-md p-8 text-center">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
+                <p className="text-gray-600 mb-6">Please log in to view your application tracker.</p>
+                <button
+                    onClick={() => { setShowAuthPage(true); setAuthMode('login'); }}
+                    className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"
+                >
+                  Sign In
+                </button>
+              </div>
+          )}
         </main>
       </div>
   );

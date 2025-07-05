@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export function ApplicationList({ applications, onEdit, onDelete }) {
     if (!applications || applications.length === 0) {
         return (
-            <p className="text-gray-600 text-center py-4">No applications added yet. Start by adding one above!</p>
+            <p className="text-gray-600 text-center py-4">No applications added yet.</p>
         );
     }
 
@@ -16,6 +16,7 @@ export function ApplicationList({ applications, onEdit, onDelete }) {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Position</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Applied</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Notes</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -37,6 +38,9 @@ export function ApplicationList({ applications, onEdit, onDelete }) {
                 </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{app.dateApplied}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {app.lastUpdated ? new Date(app.lastUpdated).toLocaleString() : 'N/A'}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 max-w-xs overflow-hidden text-ellipsis">{app.notes}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium rounded-br-lg">
                             <button

@@ -23,5 +23,6 @@
 hs_err_pid*
 replay_pid*
 .idea
-application.properties
+#application.properties
 target/
+package-lock.json
