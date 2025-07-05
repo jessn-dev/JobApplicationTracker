@@ -17,7 +17,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF for stateless API
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/**").permitAll() // Allow access to /api/auth/** endpoints (signup, signin)
-                        .requestMatchers("/api/applications/**").permitAll() // TEMPORARY: Allow access to /api/applications/** without authentication
+                        .requestMatchers("/api/applications/**").authenticated() // Require authentication for /api/applications/**
                         .anyRequest().permitAll() // Allow all other requests (e.g., static resources, homepage)
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // Use stateless sessions

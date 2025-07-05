@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users") // Specify table name to avoid conflict with 'user' keyword in some DBs
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,5 +25,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String passwordHash;
+    private String passwordHash; // Store hashed password
+
+    // You can add more fields like name, roles, etc.
 }
