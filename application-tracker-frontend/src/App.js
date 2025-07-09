@@ -4,10 +4,11 @@ import { ApplicationForm } from './components/ApplicationForm';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { HomePage } from './components/HomePage';
-import { AuthPage } from './components/AuthPage'; // Import the new combined AuthPage
+import { AuthPage } from './components/AuthPage';
+import { Sidebar } from './components/Sidebar'; // Import the new Sidebar component
 import * as XLSX from 'xlsx';
 
-// Helper function to get a date string in YYYY-MM-DD format
+// Helper function to get a date string in INSEE-MM-DD format
 const getFormattedDate = (date) => {
   const year = date.getFullYear();
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -20,9 +21,10 @@ function App() {
   const [editingApplication, setEditingApplication] = useState(null);
   const [statusCounts, setStatusCounts] = useState({});
   const [currentPage, setCurrentPage] = useState('home');
-  const [showAuthPage, setShowAuthPage] = useState(false); // State to control AuthPage visibility
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'signup'
+  const [showAuthPage, setShowAuthPage] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
   const [isLoggedIn, setIsLoggedIn] = useState(false); // State to track authentication status
+  const [showApplicationFormAndList, setShowApplicationFormAndList] = useState(false); // New state to control visibility
 
   // Base URL for your Spring Boot backend
   const API_BASE_URL = 'http://localhost:8080/api/applications';
@@ -36,7 +38,7 @@ function App() {
       }
       const data = await response.json();
       setApplications(data);
-      calculateStatusCounts(data); // Calculate counts for the dashboard
+      calculateStatusCounts(data);
     } catch (error) {
       console.error("Error fetching applications:", error);
     }
@@ -66,7 +68,7 @@ function App() {
     if (currentPage === 'tracker' && isLoggedIn) {
       fetchApplications();
     }
-  }, [currentPage, isLoggedIn]); // Re-fetch when page changes to tracker or login status changes
+  }, [currentPage, isLoggedIn]);
 
   const addApplication = async (_id, application) => {
     try {
@@ -163,33 +165,55 @@ function App() {
   // Handle successful login/signup
   const handleAuthSuccess = () => {
     setIsLoggedIn(true);
-    setShowAuthPage(false); // Hide auth page
+    setShowAuthPage(false);
     setCurrentPage('tracker'); // Navigate to tracker page after login/signup
+    setShowApplicationFormAndList(false); // Initially hide form/list after login
   };
 
   // Handle logout
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setCurrentPage('home'); // Go to home page after logout
+    setCurrentPage('home');
     alert('Logged out successfully!');
   };
 
-  // Determine main content class based on the current page
+  // Determine main content class based on the current page and login status
   const mainContentClass = currentPage === 'home' || showAuthPage
       ? 'w-full p-0' // Full width and no padding for homepage or auth pages
-      : 'container mx-auto p-4 md:p-8'; // Centered container with padding for tracker page
+      : isLoggedIn && currentPage === 'tracker'
+          ? 'flex-1 p-4 md:p-8 ml-64 transition-all duration-300' // Removed pt-4 here
+          : 'container mx-auto p-4 md:p-8 pt-20'; // Centered container with padding for tracker page when not logged in, added pt-20
 
   return (
-      <div className="min-h-screen bg-gray-100 font-sans antialiased">
-        <Header
-            currentPage={currentPage}
-            onNavigate={setCurrentPage}
-            onSignInClick={() => { setShowAuthPage(true); setAuthMode('login'); }} // Changed to onSignInClick
-            onLogout={handleLogout}
-            isLoggedIn={isLoggedIn}
-            setShowAuthPage={setShowAuthPage} // Pass setShowAuthPage to Header
-        />
-        <main className={mainContentClass}>
+      <div className="min-h-screen bg-gray-100 font-sans antialiased flex">
+        {/* Conditionally render Header - it will now only render when NOT logged in OR NOT on the tracker page */}
+        {!isLoggedIn || currentPage !== 'tracker' ? (
+            <Header
+                currentPage={currentPage}
+                onNavigate={setCurrentPage}
+                onSignInClick={() => { setShowAuthPage(true); setAuthMode('login'); }}
+                onLogout={handleLogout}
+                isLoggedIn={isLoggedIn}
+                setShowAuthPage={setShowAuthPage}
+            />
+        ) : (
+            // Render nothing when logged in and on tracker page, as sidebar handles all nav/logout
+            null
+        )}
+
+
+        {isLoggedIn && currentPage === 'tracker' && (
+            <Sidebar
+                onNavigate={setCurrentPage}
+                onShowFormAndList={() => setShowApplicationFormAndList(true)}
+                onShowDashboard={() => setShowApplicationFormAndList(false)}
+                currentPage={currentPage}
+                showApplicationFormAndList={showApplicationFormAndList}
+                onLogout={handleLogout} // Pass logout handler to sidebar
+            />
+        )}
+
+        <main className={`flex-1 ${mainContentClass}`}>
           {showAuthPage && (
               <AuthPage
                   mode={authMode}
@@ -203,44 +227,46 @@ function App() {
               <HomePage onNavigate={setCurrentPage} />
           )}
 
-          {!showAuthPage && currentPage === 'tracker' && isLoggedIn && ( // Only show tracker if logged in
+          {!showAuthPage && currentPage === 'tracker' && isLoggedIn && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                  {/* Dashboard Section */}
-                  <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">Application Status Dashboard</h2>
-                    <Dashboard allApplications={applications} statusCounts={statusCounts} />
-                  </div>
-
-                  {/* Add/Edit Form Section */}
-                  <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                      {editingApplication ? 'Edit Application' : 'Add New Application'}
-                    </h2>
-                    <ApplicationForm
-                        onSubmit={editingApplication ? updateApplication : addApplication}
-                        initialData={editingApplication}
-                        onCancel={handleCancelEdit}
-                    />
-                  </div>
+                {/* Always show Dashboard on tracker page when logged in, as per request */}
+                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Application Status Dashboard</h2>
+                  <Dashboard allApplications={applications} statusCounts={statusCounts} />
                 </div>
 
-                {/* Application List Section */}
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Applications</h2>
-                  <ApplicationList
-                      applications={applications}
-                      onEdit={handleEdit}
-                      onDelete={deleteApplication}
-                  />
-                </div>
+                {showApplicationFormAndList && (
+                    <>
+                      {/* Add/Edit Form Section */}
+                      <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                          {editingApplication ? 'Edit Application' : 'Add New Application'}
+                        </h2>
+                        <ApplicationForm
+                            onSubmit={editingApplication ? updateApplication : addApplication}
+                            initialData={editingApplication}
+                            onCancel={handleCancelEdit}
+                        />
+                      </div>
+
+                      {/* Application List Section */}
+                      <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Applications</h2>
+                        <ApplicationList
+                            applications={applications}
+                            onEdit={handleEdit}
+                            onDelete={deleteApplication}
+                        />
+                      </div>
+                    </>
+                )}
               </>
           )}
 
           {!showAuthPage && currentPage === 'tracker' && !isLoggedIn && (
               <div className="flex flex-col items-center justify-center min-h-[calc(100vh-120px)] bg-white rounded-lg shadow-md p-8 text-center">
                 <h2 className="text-2xl font-bold text-gray-800 mb-4">Access Denied</h2>
-                <p className="text-gray-600 mb-6">Please log in to view your application tracker.</p>
+                <p className="text-gray-600 mb-6">Please sign in to view your application tracker.</p>
                 <button
                     onClick={() => { setShowAuthPage(true); setAuthMode('login'); }}
                     className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300 ease-in-out"

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import * as XLSX from 'xlsx';
+import { Info, Download } from 'lucide-react'; // Import Lucide icons
 
-// Helper function to get a date string in YYYY-MM-DD format
+// Helper function to get a date string in INSEE-MM-DD format
 const getFormattedDate = (date) => {
     const year = date.getFullYear();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -11,37 +12,37 @@ const getFormattedDate = (date) => {
 };
 
 export function Dashboard({ allApplications, statusCounts }) {
-    const [dateFilter, setDateFilter] = useState('all');
+    const [dateFilter, setDateFilter] = useState('last7days'); // Default to last 7 days
     const [activeStatuses, setActiveStatuses] = useState([]);
 
+    // Updated COLORS to match the image's segments more closely
     const COLORS = {
-        'Applied': '#3B82F6',    // blue-500
-        'Interviewing': '#8B5CF6', // purple-500
-        'Offer': '#22C55E',       // green-500
-        'Rejected': '#EF4444',    // red-500
-        'Wishlist': '#F59E0B',    // yellow-500
+        'Applied': '#4285F4', // Blue (Direct)
+        'Interviewing': '#DB4437', // Red (Sponsor)
+        'Offer': '#F4B400', // Yellow (Affiliate)
+        'Rejected': '#0F9D58', // Green (Email marketing)
+        'Wishlist': '#AB47BC', // Purple (A new color for wishlist)
     };
 
     const filteredApplicationsForDashboard = useMemo(() => {
         let filtered = allApplications;
         const today = new Date();
-        const todayStr = getFormattedDate(today);
+        today.setHours(0, 0, 0, 0); // Normalize today's date to start of day
 
         if (dateFilter === 'today') {
-            filtered = allApplications.filter(app => app.dateApplied === todayStr);
+            filtered = allApplications.filter(app => new Date(app.dateApplied).toDateString() === today.toDateString());
         } else if (dateFilter === 'yesterday') {
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1);
-            const yesterdayStr = getFormattedDate(yesterday);
-            filtered = allApplications.filter(app => app.dateApplied === yesterdayStr);
+            filtered = allApplications.filter(app => new Date(app.dateApplied).toDateString() === yesterday.toDateString());
         } else if (dateFilter === 'last7days') {
             const sevenDaysAgo = new Date(today);
             sevenDaysAgo.setDate(today.getDate() - 6);
-            sevenDaysAgo.setHours(0, 0, 0, 0);
+            sevenDaysAgo.setHours(0, 0, 0, 0); // Normalize to start of day
 
             filtered = allApplications.filter(app => {
                 const appDate = new Date(app.dateApplied);
-                appDate.setHours(0, 0, 0, 0);
+                appDate.setHours(0, 0, 0, 0); // Normalize app date to start of day
                 return appDate >= sevenDaysAgo && appDate <= today;
             });
         }
@@ -111,37 +112,38 @@ export function Dashboard({ allApplications, statusCounts }) {
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* Filter Dropdown for Dashboard */}
-            <div className="flex flex-wrap gap-2 items-center">
-                <label htmlFor="dateFilter" className="text-sm font-medium text-gray-700 mr-2">Filter by Date Applied:</label>
-                <select
-                    id="dateFilter"
-                    value={dateFilter}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="px-3 py-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm font-medium"
+        <div className="flex flex-col gap-4 bg-gray-800 p-6 rounded-lg shadow-md text-white"> {/* Dark background */}
+            {/* Header section with title and icons */}
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold flex items-center space-x-2">
+                    <span>Application Status Overview</span>
+                    <Info size={16} className="text-gray-400 cursor-pointer" title="Information about your application statuses" />
+                </h2>
+                <button
+                    onClick={exportToExcel}
+                    className="text-gray-400 hover:text-white transition-colors duration-200"
+                    title="Download data"
                 >
-                    <option value="all">All</option>
-                    <option value="today">Today</option>
-                    <option value="yesterday">Yesterday</option>
-                    <option value="last7days">Past 7 Days</option>
-                </select>
+                    <Download size={20} />
+                </button>
             </div>
 
+            {/* Removed Checkbox filters (Desktop, Tablet, Mobile) */}
+
             {filteredApplicationsForDashboard.length === 0 ? (
-                <p className="text-gray-600 text-center py-4">No applications found for the selected date filter.</p>
+                <p className="text-gray-400 text-center py-4">No applications found for the selected date filter.</p>
             ) : (
-                <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+                <div className="flex flex-col items-center justify-center gap-6"> {/* Changed to flex-col for vertical stacking */}
                     {/* Radial Chart (Donut Chart) using Recharts */}
-                    <div className="relative w-48 h-48 flex items-center justify-center">
+                    <div className="relative w-72 h-72 flex items-center justify-center"> {/* Increased size to w-72 h-72 */}
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={chartData}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
+                                    innerRadius={90} // Increased inner radius
+                                    outerRadius={110} // Increased outer radius
                                     fill="#8884d8"
                                     paddingAngle={5}
                                     dataKey="value"
@@ -155,55 +157,61 @@ export function Dashboard({ allApplications, statusCounts }) {
                         </ResponsiveContainer>
                         {/* Centering the total count and label */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
-                            <div className="text-xl font-bold text-gray-800">
+                            <div className="text-xl font-bold text-white">
                                 {activeTotalApplications}
                             </div>
-                            <div className="text-sm text-gray-600">
-                                Total
+                            <div className="text-sm text-gray-400">
+                                Total Applications
                             </div>
                         </div>
                     </div>
 
-                    {/* Status List and Percentages (Legend/Filter) */}
-                    <div className="flex flex-col space-y-2 w-full md:w-1/2">
-                        {Object.keys(filteredStatusCounts).map(status => { // Use filteredStatusCounts for legend
+                    {/* Status List and Percentages (Legend/Filter) - Moved below the chart, made inline and smaller */}
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 w-full mt-4"> {/* Changed to flex-wrap and justify-center with gap */}
+                        {Object.keys(filteredStatusCounts).map(status => {
                             const count = filteredStatusCounts[status];
-                            const percentage = activeTotalApplications > 0 ? (count / activeTotalApplications) * 100 : 0; // Percentage based on active total
+                            const percentage = activeTotalApplications > 0 ? (count / activeTotalApplications) * 100 : 0;
                             const isActive = activeStatuses.includes(status);
 
                             return (
                                 <div
                                     key={status}
-                                    className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-all duration-200 ${
-                                        isActive ? 'bg-gray-100' : 'opacity-60 hover:bg-gray-50'
+                                    className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm cursor-pointer transition-all duration-200 ${
+                                        isActive ? 'bg-gray-700' : 'opacity-70 hover:bg-gray-700'
                                     }`}
                                     onClick={() => toggleStatus(status)}
                                 >
-                                    <div className="flex items-center">
-                                        <span className={`inline-block w-3 h-3 rounded-full mr-2`} style={{ backgroundColor: COLORS[status] }}></span>
-                                        <span className="text-gray-700 font-medium">{status}</span>
-                                    </div>
-                                    <span className="text-gray-600">{count} ({percentage.toFixed(1)}%)</span>
+                                    <span className={`inline-block w-2 h-2 rounded-full`} style={{ backgroundColor: COLORS[status] }}></span>
+                                    <span className="text-gray-200 font-medium">{status}</span>
+                                    <span className="text-gray-400">({count})</span> {/* Display count next to status */}
                                 </div>
                             );
                         })}
                     </div>
                 </div>
             )}
-            {/* Export to Excel Button for Dashboard with Tooltip */}
-            <div className="relative group self-center md:self-start">
-                <button
-                    onClick={exportToExcel}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 ease-in-out transform hover:scale-105"
-                >
-                    Export Filtered to Excel
-                </button>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-10 whitespace-nowrap">
-                    Download current dashboard data as Excel
-                    {/* Tooltip Arrow */}
-                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+            {/* Footer section with date filter */}
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-700">
+                <div className="relative group">
+                    <select
+                        id="dateFilter"
+                        value={dateFilter}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="appearance-none bg-gray-700 text-white px-4 py-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm font-medium pr-8 cursor-pointer"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
+                    >
+                        <option value="last7days">Last 7 days</option>
+                        <option value="today">Today</option>
+                        <option value="yesterday">Yesterday</option>
+                        <option value="all">All Time</option>
+                    </select>
+                    {/* Tooltip for date filter */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-gray-800 text-white text-xs rounded-md opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-10 whitespace-nowrap">
+                        Filter applications by date applied
+                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-gray-800"></div>
+                    </div>
                 </div>
+                {/* Removed Traffic Analysis Link */}
             </div>
         </div>
     );

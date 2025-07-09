@@ -148,15 +148,13 @@ export function AuthPage({ mode, onAuthSuccess, onClose, onSwitchMode }) {
                             </button>
                         </p>
                     ) : (
-                        <p>
-                            Already have an account?{' '}
-                            <button
-                                onClick={() => onSwitchMode('login')}
-                                className="text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 ease-in-out"
-                            >
-                                Sign In
-                            </button>
-                        </p>
+                        // Removed "Already have an account?" text as per request
+                        <button
+                            onClick={() => onSwitchMode('login')}
+                            className="text-indigo-600 hover:text-indigo-800 font-medium transition duration-300 ease-in-out"
+                        >
+                            Sign In
+                        </button>
                     )}
                 </div>
             </div>

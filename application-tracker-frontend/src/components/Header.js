@@ -3,13 +3,14 @@ import React from 'react';
 export function Header({ currentPage, onNavigate, onSignInClick, onLogout, isLoggedIn, setShowAuthPage }) {
     const handleHomeClick = () => {
         onNavigate('home');
-        setShowAuthPage(false); // Ensure auth page is closed when navigating to home
+        setShowAuthPage(false);
     };
 
+    // The Header component will now only render when not logged in or not on the tracker page.
+    // Its internal logic for showing/hiding elements based on isLoggedIn/currentPage is simplified.
     return (
-        <header className="fixed w-full z-30 top-0 bg-transparent text-white">
-            <div className="container mx-auto flex items-center justify-between py-4 px-6">
-                {/* Left section: Logo and Nav Buttons */}
+        <header className="fixed w-full z-30 top-0 text-white py-4 px-6 bg-transparent">
+            <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center space-x-6">
                     <h1 className="text-3xl font-extrabold tracking-tight text-white">
                         Job Application Tracker
@@ -18,7 +19,7 @@ export function Header({ currentPage, onNavigate, onSignInClick, onLogout, isLog
                         <ul className="flex space-x-4">
                             <li>
                                 <button
-                                    onClick={handleHomeClick} // Use the new handler
+                                    onClick={handleHomeClick}
                                     className={`px-3 py-2 rounded-md text-sm font-medium transition duration-300 ease-in-out ${
                                         currentPage === 'home' ? 'bg-blue-700' : 'hover:bg-blue-500'
                                     }`}
@@ -40,11 +41,10 @@ export function Header({ currentPage, onNavigate, onSignInClick, onLogout, isLog
                     </nav>
                 </div>
 
-                {/* Right section: Sign In/Logout Buttons */}
                 <div className="flex items-center space-x-4">
                     {!isLoggedIn ? (
                         <button
-                            onClick={onSignInClick} // Changed to onSignInClick
+                            onClick={onSignInClick}
                             className="px-4 py-2 border border-white rounded-md text-sm font-medium text-white hover:bg-white hover:text-blue-600 transition duration-300 ease-in-out"
                         >
                             Sign In
