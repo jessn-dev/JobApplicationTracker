@@ -1,4 +1,4 @@
-# JobApplicationTracker
+# JobApplicationTracker - IN PROGRESS
 
 I've been exploring new career opportunities for a while now. 
 While the process has introduced me to many great people and 
